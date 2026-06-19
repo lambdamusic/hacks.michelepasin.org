@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hayden Thorpe — Diviner</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #080808;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    .phrase {
+      position: absolute;
+      background: #f4f1eb;
+      color: #141414;
+      padding: 4px 11px 7px;
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      line-height: 1.2;
+      font-weight: 400;
+      cursor: pointer;
+      user-select: none;
+      text-decoration: none;
+      display: block;
+      white-space: nowrap;
+      transition: background-color 0.1s ease, color 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .phrase.lit {
+      background: #0d0d0d;
+      color: #f4f1eb;
+      box-shadow: 0 0 0 1px #f4f1eb, 0 0 18px 4px rgba(244, 241, 235, 0.22);
+      z-index: 50;
+    }
+
+    #credit {
+      position: fixed;
+      bottom: 18px;
+      right: 22px;
+      color: rgba(255, 255, 255, 0.2);
+      font-family: Georgia, serif;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 18px;
+      left: 22px;
+      color: rgba(255, 255, 255, 0.15);
+      font-family: Georgia, serif;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      pointer-events: none;
+      user-select: none;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<div id="credit">Hayden Thorpe — Diviner, 2019</div>
+<div id="hint">move to illuminate · click to read</div>
+
+<script>
+const songs = [
+  {
+    url: "https://genius.com/Hayden-thorpe-diviner-lyrics",
+    title: "Diviner",
+    phrases: [
+      "I'm a keeper of secrets",
+      "pray do tell",
+      "I'll be your disciple",
+      "show yourself",
+      "living a fever dream",
+      "you be my diviner",
+      "show me where to go",
+      "my ghost had left my skin",
+      "our house of mirrors always shimmering",
+      "you've been gone a long time",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-straight-lines-lyrics",
+    title: "Straight Lines",
+    phrases: [
+      "every end starts",
+      "throw out your Western medicine",
+      "keep your head with your heart",
+      "time only moves in a straight line",
+      "what you need, you'll have again",
+      "everything ends sometimes",
+      "how am I supposed to live",
+      "moving in straight lines, surrounded",
+      "everything ends in that crazy word, goodbye",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-earthly-needs-lyrics",
+    title: "Earthly Needs",
+    phrases: [
+      "how does that word feel in your mouth?",
+      "I cannot unlove you",
+      "I cannot undo you",
+      "emotional jiu-jitsu",
+      "no one beyond rescue",
+      "what a sublime glitch blind hope is",
+      "earthly needs won't undo or delete",
+      "until the abyss blows me a kiss",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-love-crimes-lyrics",
+    title: "Love Crimes",
+    phrases: [
+      "I'm not giving up on fear",
+      "all love crimes are carried out",
+      "cold hard affection aggressively kind",
+      "we're living a life of love crime",
+      "even the greatest of loves",
+      "are made of modest stuff",
+      "I'm balaclava'd, I'm dressed in stripes",
+      "can be given up",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-stop-motion-lyrics",
+    title: "Stop Motion",
+    phrases: [
+      "you were broken, how I wanted you to be",
+      "left out bits of me",
+      "your myth was made",
+      "how do I keep it all together?",
+      "I've been holding still for so long",
+      "I went back to where I saw you last",
+      "you were gone",
+      "hard to be humble",
+      "can you see the change?",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-in-my-name-lyrics",
+    title: "In My Name",
+    phrases: [
+      "I have shaken these hands",
+      "I know these demons",
+      "I've smelt their perfume",
+      "I have slept in their rooms",
+      "if you must crusade",
+      "don't do so in my name",
+      "I've answered that voice",
+      "don't fly that flag in my name",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-anywhen-lyrics",
+    title: "Anywhen",
+    phrases: [
+      "strangers again",
+      "it was all improvised",
+      "you made me new to myself",
+      "I felt like someone else",
+      "premonition becomes true life",
+      "I pretty much self-combust",
+      "how heavy can love really be?",
+      "it'll burn a hole in your heart",
+      "if it's in strange hands",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-human-knot-lyrics",
+    title: "Human Knot",
+    phrases: [
+      "I got your back",
+      "waste your pretty on me",
+      "my lover, not a missionary",
+      "what a bind",
+      "one hell of a human knot",
+      "am I not human?",
+      "you got to push in to get released",
+      "headlocks and double knots",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-impossible-object-lyrics",
+    title: "Impossible Object",
+    phrases: [
+      "no more hiding out in plain sight",
+      "loose the disguise, it's you I recognise",
+      "the angels wept as I kissed your feet",
+      "gut tell no lies",
+      "I swear that I knew you before we had met",
+      "impossible object",
+      "I knew you before I met you",
+      "I see the face behind your face",
+      "the mirror won't reflect you the same way that I do",
+    ]
+  },
+];
+
+// Flatten
+const allPhrases = songs.flatMap(s =>
+  s.phrases.map(text => ({ text, url: s.url, title: s.title }))
+);
+
+// Font size distribution — weighted toward smaller
+const SIZES =   [11, 12, 13, 14, 15, 17, 21, 26];
+const WEIGHTS = [ 2,  4,  5,  6,  4,  3,  2,  1];
+function weightedSize() {
+  const total = WEIGHTS.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < SIZES.length; i++) {
+    r -= WEIGHTS[i];
+    if (r <= 0) return SIZES[i];
+  }
+  return SIZES[SIZES.length - 1];
+}
+
+// Seeded LCG PRNG for reproducible layout
+let seed = 137;
+function rand() {
+  seed = (seed * 1664525 + 1013904223) & 0x7fffffff;
+  return seed / 0x7fffffff;
+}
+
+// Build and place elements
+const elements = [];
+
+allPhrases.forEach(({ text, url, title }) => {
+  const el = document.createElement('a');
+  el.className = 'phrase';
+  el.textContent = text;
+  el.href = url;
+  el.target = '_blank';
+  el.rel = 'noopener noreferrer';
+  el.title = title;
+
+  const fontSize = weightedSize();
+  const rot = (rand() * 24 - 12).toFixed(2);
+  const x = rand() * 80 + 4;   // 4–84 vw
+  const y = rand() * 80 + 4;   // 4–84 vh
+
+  el.style.fontSize = fontSize + 'px';
+  el.style.left = x + 'vw';
+  el.style.top  = y + 'vh';
+  el.style.transform = `rotate(${rot}deg)`;
+
+  document.body.appendChild(el);
+  elements.push(el);
+});
+
+// ── Interaction ─────────────────────────────────────────────────────────────
+
+let mouseX = -9999, mouseY = -9999;
+let proxLit  = new Set();
+let flashLit = new Set();
+let lastFlash = 0;
+let raf;
+
+function tick() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const radius = Math.min(vw, vh) * 0.16;
+
+  // Proximity pass
+  const newProx = new Set();
+  for (const el of elements) {
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width  * 0.5;
+    const cy = r.top  + r.height * 0.5;
+    if (Math.hypot(cx - mouseX, cy - mouseY) < radius) newProx.add(el);
+  }
+
+  // Un-lit old proximity
+  for (const el of proxLit) {
+    if (!newProx.has(el) && !flashLit.has(el)) el.classList.remove('lit');
+  }
+  // Lit new proximity
+  for (const el of newProx) el.classList.add('lit');
+  proxLit = newProx;
+
+  // Random distant flash every ~280 ms
+  const now = performance.now();
+  if (now - lastFlash > 280) {
+    lastFlash = now;
+    const far = elements.filter(el => !proxLit.has(el) && !flashLit.has(el));
+    if (far.length) {
+      const el = far[Math.floor(Math.random() * far.length)];
+      el.classList.add('lit');
+      flashLit.add(el);
+      setTimeout(() => {
+        if (!proxLit.has(el)) el.classList.remove('lit');
+        flashLit.delete(el);
+      }, 380);
+    }
+  }
+}
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(tick);
+});
+
+document.addEventListener('mouseleave', () => {
+  mouseX = -9999; mouseY = -9999;
+  for (const el of elements) el.classList.remove('lit');
+  proxLit.clear(); flashLit.clear();
+});
+</script>
+</body>
+</html>

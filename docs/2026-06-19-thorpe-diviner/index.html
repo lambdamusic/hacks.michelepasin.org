@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hayden Thorpe — Diviner</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #080808;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    /* ── Cut-out phrases ──────────────────────────────────────── */
+    .phrase {
+      position: absolute;
+      background: #f4f1eb;
+      color: #141414;
+      padding: 4px 11px 7px;
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      line-height: 1.2;
+      font-weight: 400;
+      cursor: pointer;
+      user-select: none;
+      text-decoration: none;
+      display: block;
+      white-space: nowrap;
+      transition: background-color 0.1s ease, color 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .phrase.lit {
+      background: #0d0d0d;
+      color: #f4f1eb;
+      box-shadow: 0 0 0 1px #f4f1eb, 0 0 18px 4px rgba(244, 241, 235, 0.2);
+      z-index: 50;
+    }
+
+    /* ── Bottom overlay ───────────────────────────────────────── */
+    #overlay {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 60px 6vw 36px;
+      pointer-events: none;
+      background: linear-gradient(to top, #080808 55%, rgba(8,8,8,0) 100%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 200;
+    }
+
+    #overlay.visible {
+      opacity: 1;
+    }
+
+    #overlay-text {
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      font-size: clamp(22px, 4.2vw, 58px);
+      color: #f4f1eb;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+      white-space: normal;
+      overflow: hidden;
+    }
+
+    #overlay-song {
+      margin-top: 10px;
+      font-family: Georgia, serif;
+      font-size: 11px;
+      color: rgba(244, 241, 235, 0.35);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    /* ── Utility labels ───────────────────────────────────────── */
+    #credit {
+      position: fixed;
+      top: 20px;
+      right: 22px;
+      color: rgba(255,255,255,0.18);
+      font-family: Georgia, serif;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    #hint {
+      position: fixed;
+      top: 20px;
+      left: 22px;
+      color: rgba(255,255,255,0.13);
+      font-family: Georgia, serif;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      pointer-events: none;
+      user-select: none;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<div id="credit">Hayden Thorpe — Diviner, 2019</div>
+<div id="hint">move to illuminate · click to read</div>
+
+<div id="overlay">
+  <div id="overlay-text"></div>
+  <div id="overlay-song"></div>
+</div>
+
+<script>
+// ── Song data ──────────────────────────────────────────────────────────────
+const songs = [
+  {
+    url: "https://genius.com/Hayden-thorpe-diviner-lyrics",
+    title: "Diviner",
+    phrases: [
+      "I'm a keeper of secrets",
+      "pray do tell",
+      "I'll be your disciple",
+      "show yourself",
+      "living a fever dream",
+      "you be my diviner",
+      "show me where to go",
+      "my ghost had left my skin",
+      "our house of mirrors always shimmering",
+      "you've been gone a long time",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-straight-lines-lyrics",
+    title: "Straight Lines",
+    phrases: [
+      "every end starts",
+      "throw out your Western medicine",
+      "keep your head with your heart",
+      "time only moves in a straight line",
+      "what you need, you'll have again",
+      "everything ends sometimes",
+      "how am I supposed to live",
+      "moving in straight lines, surrounded",
+      "everything ends in that crazy word, goodbye",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-earthly-needs-lyrics",
+    title: "Earthly Needs",
+    phrases: [
+      "how does that word feel in your mouth?",
+      "I cannot unlove you",
+      "I cannot undo you",
+      "emotional jiu-jitsu",
+      "no one beyond rescue",
+      "what a sublime glitch blind hope is",
+      "earthly needs won't undo or delete",
+      "until the abyss blows me a kiss",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-love-crimes-lyrics",
+    title: "Love Crimes",
+    phrases: [
+      "I'm not giving up on fear",
+      "all love crimes are carried out",
+      "cold hard affection aggressively kind",
+      "we're living a life of love crime",
+      "even the greatest of loves",
+      "are made of modest stuff",
+      "I'm balaclava'd, I'm dressed in stripes",
+      "can be given up",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-stop-motion-lyrics",
+    title: "Stop Motion",
+    phrases: [
+      "you were broken, how I wanted you to be",
+      "left out bits of me",
+      "your myth was made",
+      "how do I keep it all together?",
+      "I've been holding still for so long",
+      "I went back to where I saw you last",
+      "you were gone",
+      "hard to be humble",
+      "can you see the change?",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-in-my-name-lyrics",
+    title: "In My Name",
+    phrases: [
+      "I have shaken these hands",
+      "I know these demons",
+      "I've smelt their perfume",
+      "I have slept in their rooms",
+      "if you must crusade",
+      "don't do so in my name",
+      "I've answered that voice",
+      "don't fly that flag in my name",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-anywhen-lyrics",
+    title: "Anywhen",
+    phrases: [
+      "strangers again",
+      "it was all improvised",
+      "you made me new to myself",
+      "I felt like someone else",
+      "premonition becomes true life",
+      "I pretty much self-combust",
+      "how heavy can love really be?",
+      "it'll burn a hole in your heart",
+      "if it's in strange hands",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-human-knot-lyrics",
+    title: "Human Knot",
+    phrases: [
+      "I got your back",
+      "waste your pretty on me",
+      "my lover, not a missionary",
+      "what a bind",
+      "one hell of a human knot",
+      "am I not human?",
+      "you got to push in to get released",
+      "headlocks and double knots",
+    ]
+  },
+  {
+    url: "https://genius.com/Hayden-thorpe-impossible-object-lyrics",
+    title: "Impossible Object",
+    phrases: [
+      "no more hiding out in plain sight",
+      "loose the disguise, it's you I recognise",
+      "the angels wept as I kissed your feet",
+      "gut tell no lies",
+      "I swear that I knew you before we had met",
+      "impossible object",
+      "I knew you before I met you",
+      "I see the face behind your face",
+      "the mirror won't reflect you the same way that I do",
+    ]
+  },
+];
+
+const allPhrases = songs.flatMap(s =>
+  s.phrases.map(text => ({ text, url: s.url, title: s.title }))
+);
+
+// ── Font size distribution ─────────────────────────────────────────────────
+const SIZES   = [11, 12, 13, 14, 15, 17, 21, 26];
+const WEIGHTS = [ 2,  4,  5,  6,  4,  3,  2,  1];
+function weightedSize() {
+  const total = WEIGHTS.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < SIZES.length; i++) { r -= WEIGHTS[i]; if (r <= 0) return SIZES[i]; }
+  return SIZES[SIZES.length - 1];
+}
+
+// Seeded LCG PRNG for reproducible layout
+let seed = 137;
+function rand() {
+  seed = (seed * 1664525 + 1013904223) & 0x7fffffff;
+  return seed / 0x7fffffff;
+}
+
+// ── Audio engine ───────────────────────────────────────────────────────────
+let audioCtx = null;
+let lastTickTime = 0;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// Short noise burst — like a paper flick or typewriter key
+function playTick(volume = 0.14) {
+  const ctx = getCtx();
+  const now = ctx.currentTime;
+  const dur = 0.032;
+  const samples = Math.floor(ctx.sampleRate * dur);
+
+  const buf = ctx.createBuffer(1, samples, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < samples; i++) {
+    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / samples, 2);
+  }
+
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+
+  const bpf = ctx.createBiquadFilter();
+  bpf.type = 'bandpass';
+  bpf.frequency.value = 2800 + Math.random() * 2000;
+  bpf.Q.value = 1.2;
+
+  const gain = ctx.createGain();
+  gain.gain.value = volume + Math.random() * 0.06;
+
+  src.connect(bpf);
+  bpf.connect(gain);
+  gain.connect(ctx.destination);
+  src.start(now);
+}
+
+// Soft sine tone — minor pentatonic, for ambient proximity flash
+const MINOR_PENT = [261.6, 311.1, 349.2, 392.0, 466.2, 523.3, 622.3, 698.5];
+function playSoftNote(volume = 0.05) {
+  const ctx = getCtx();
+  const now = ctx.currentTime;
+  const freq = MINOR_PENT[Math.floor(Math.random() * MINOR_PENT.length)];
+
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(volume, now + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.6);
+}
+
+// Rate-limited tick (avoid chattering when moving fast)
+function maybePlayTick() {
+  const now = performance.now();
+  if (now - lastTickTime > 80) {  // max ~12 ticks/sec
+    lastTickTime = now;
+    playTick();
+  }
+}
+
+// ── Build and scatter phrases ──────────────────────────────────────────────
+const elements = [];
+
+allPhrases.forEach(({ text, url, title }) => {
+  const el = document.createElement('a');
+  el.className = 'phrase';
+  el.textContent = text;
+  el.href = url;
+  el.target = '_blank';
+  el.rel = 'noopener noreferrer';
+
+  el.style.fontSize = weightedSize() + 'px';
+  el.style.left = (rand() * 80 + 4) + 'vw';
+  el.style.top  = (rand() * 72 + 4) + 'vh';  // leave bottom 24vh clear for overlay
+  el.style.transform = `rotate(${(rand() * 24 - 12).toFixed(2)}deg)`;
+
+  document.body.appendChild(el);
+  elements.push({ el, text, title });
+});
+
+// ── Overlay logic ──────────────────────────────────────────────────────────
+const overlay     = document.getElementById('overlay');
+const overlayText = document.getElementById('overlay-text');
+const overlaySong = document.getElementById('overlay-song');
+let overlayTimer  = null;
+
+function showOverlay(text, title) {
+  clearTimeout(overlayTimer);
+  overlayText.textContent = text;
+  overlaySong.textContent = title.toUpperCase();
+  overlay.classList.add('visible');
+}
+
+function hideOverlay() {
+  clearTimeout(overlayTimer);
+  overlayTimer = setTimeout(() => overlay.classList.remove('visible'), 220);
+}
+
+// Attach hover events to each phrase
+elements.forEach(({ el, text, title }) => {
+  el.addEventListener('mouseenter', () => {
+    showOverlay(text, title);
+    maybePlayTick();
+  });
+  el.addEventListener('mouseleave', hideOverlay);
+});
+
+// ── Proximity + random flash ───────────────────────────────────────────────
+let mouseX = -9999, mouseY = -9999;
+let proxLit  = new Set();
+let flashLit = new Set();
+let lastFlash = 0;
+let raf;
+
+function tick() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const radius = Math.min(vw, vh) * 0.15;
+
+  const newProx = new Set();
+  for (const { el } of elements) {
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width  * 0.5;
+    const cy = r.top  + r.height * 0.5;
+    if (Math.hypot(cx - mouseX, cy - mouseY) < radius) newProx.add(el);
+  }
+
+  for (const el of proxLit) {
+    if (!newProx.has(el) && !flashLit.has(el)) el.classList.remove('lit');
+  }
+  for (const el of newProx) el.classList.add('lit');
+  proxLit = newProx;
+
+  // Random ambient flash + soft note
+  const now = performance.now();
+  if (now - lastFlash > 320) {
+    lastFlash = now;
+    const far = elements.filter(({ el }) => !proxLit.has(el) && !flashLit.has(el));
+    if (far.length) {
+      const pick = far[Math.floor(Math.random() * far.length)];
+      pick.el.classList.add('lit');
+      flashLit.add(pick.el);
+      playSoftNote(0.04);
+      setTimeout(() => {
+        if (!proxLit.has(pick.el)) pick.el.classList.remove('lit');
+        flashLit.delete(pick.el);
+      }, 420);
+    }
+  }
+}
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(tick);
+});
+
+document.addEventListener('mouseleave', () => {
+  mouseX = -9999; mouseY = -9999;
+  for (const { el } of elements) el.classList.remove('lit');
+  proxLit.clear(); flashLit.clear();
+  hideOverlay();
+});
+</script>
+</body>
+</html>
